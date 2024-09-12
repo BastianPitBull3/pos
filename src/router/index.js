@@ -6,9 +6,11 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
-    {path: '/products', component: ProductList},
-    {path: '/orders', component: OrderList},
-    {path: '/create-order', component: CreateOrder}
+    { path: '/', redirect: '/products' },  // Redirige la raíz a productos
+    { path: '/products', component: ProductList },
+    { path: '/orders', component: OrderList },
+    { path: '/create-order', component: CreateOrder },
+    { path: '/:pathMatch(.*)*', redirect: '/products' }  // Redirige cualquier ruta no definida a productos
 ];
 
 const router = createRouter({

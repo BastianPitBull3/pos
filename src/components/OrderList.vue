@@ -12,7 +12,7 @@
             </thead>
             <tbody>
                 <tr v-for="order in orders" :key="order.id">
-                    <td>{{ order.number }}</td>
+                    <td>{{ order.orderNumber }}</td>
                     <td>${{ order.total }}</td>
                     <td>
                         <button class="btn-small" @click="editOrder(order.id)" >Edit</button>
@@ -28,6 +28,7 @@
 <script>
     import { db } from '../firebaseConfig';
     import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+    import { fetchOrders } from '@/firebaseUtils';
 
     export default {
         data() {
@@ -39,9 +40,7 @@
             await this.fetchOrders();
         }, methods: {
             async fetchOrders() {
-                const querySnapshot = await getDocs(collection(db, "orders"));
-                this.orders = querySnapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() }));
+                this.orders = await fetchOrders();
             },
             async deleteOrder(id) {
                 await deleteDoc(doc(db, "orders", id));

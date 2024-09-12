@@ -3,7 +3,7 @@
         <h1>Create New Order</h1>
 
         <form @submit.prevent="submitOrder" >
-            <input v-model="newOrder.number" placeholder="Order Number" class="input-style">
+            <!-- <input v-model="newOrder.number" placeholder="Order Number" class="input-style"> -->
 
             <table class="product-selection-table">
                 <thead>
@@ -19,7 +19,7 @@
                         <td>{{ product.name }}</td>
                         <td>${{ product.price }}</td>
                         <td>
-                            <input type="number" v-model="product.quantity" min=0 placeholder="Quantity" class="input-style">
+                            <input type="text" pattern="\d*" v-model="product.quantity" min=0 placeholder="Quantity" class="input-style">
                         </td>
                         <td>
                             <button type="button" @click="addProductToOrder(product)" class="add-button"  :disabled="isProductAdded(product)">Add</button>
@@ -46,12 +46,13 @@
 <script>
     import { db } from '../firebaseConfig';
     import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+    import { fetchOrders } from '@/firebaseUtils';
 
     export default {
         data() {
             return {
                 newOrder: {
-                    orderNumber: '',
+                    orderNumber: 0,
                     products: [],
                     total: 0,
                 },
@@ -70,9 +71,24 @@
                     quantity: 0,
                 }));
             },
+            async assignOrderNumber() {
+                const orders = await fetchOrders();
+                console.log(`numero de ordenes: ${orders.length}`);
+                if (orders.length > 0) {
+                    console.log("mas de 0 ordenes");
+                    // Asigna el número de orden automáticamente como el número más alto + 1
+                    const maxOrderNumber = (Math.max(...orders.map(order => order.orderNumber)));
+                    this.newOrder.orderNumber = maxOrderNumber + 1;
+                    console.log(`orderNumber: ${this.newOrder.orderNumber}`);
+                    
+                } else {
+                    console.log("no hay ordenes");
+                    this.newOrder.orderNumber = 1; // Si no hay órdenes previas
+                }
+            },
             async addProductToOrder(selectedProduct) {
                 if (selectedProduct <= 0) {
-                    alert("Plese add a valid queantity");
+                    alert("Please add a valid quantity");
                     return;
                 }
 
@@ -99,12 +115,13 @@
                     alert("please add at least one product to the order.");
                     return;
                 }
+                await this.assignOrderNumber();
                 await addDoc(collection(db, "orders"), this.newOrder);
                 alert("order created succesfully");
                 this.resetOrderForm();
             },
             resetOrderForm() {
-                this.newOrder = { orderNumber: '', products: [], total: 0 };
+                this.newOrder = { orderNumber: 0, products: [], total: 0 };
                 this.availableProducts.forEach(product => product.quantity=0);      
             },
         }
