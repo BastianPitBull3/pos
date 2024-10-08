@@ -1,10 +1,5 @@
 <template>
   <div id="app">
-    <!-- <nav>
-      <router-link to="products">Product List</router-link>
-      <router-link to="orders">Order List</router-link>
-      <router-link to="create-order">Create Order</router-link>
-    </nav> -->
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
         <div class="container-fluid menu">
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
