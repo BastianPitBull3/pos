@@ -15,12 +15,15 @@
           <td>{{ order.orderNumber }}</td>
           <td>${{ order.total }}</td>
           <td>
-            <button class="btn-small btn-edit" @click="editOrder(order.id)">
+            <!-- <button class="btn-small btn-edit" @click="editOrder(order.id)">
               Edit
-            </button>
-            <button class="btn-small btn-delete" @click="deleteOrder(order.id)">
-              Delete
-            </button>
+            </button> -->
+            <div class="orders-actions">
+              <button class="btn-small btn-delete" @click="deleteOrder(order.id)">
+                Delete
+              </button>
+            </div>
+            
           </td>
         </tr>
       </tbody>
@@ -54,7 +57,8 @@ export default {
   },
   methods: {
     async fetchOrders() {
-      this.orders = await fetchOrders();
+      const fetchedOrders = await fetchOrders();
+      this.orders = fetchedOrders.sort((a, b) => a.orderNumber - b.orderNumber);
     },
     async deleteOrder(id) {
       await deleteDoc(doc(db, "orders", id));
@@ -84,6 +88,10 @@ export default {
 }
 .orders-table th {
   background-color: #f5f5f5;
+}
+.orders-actions{
+  display: flex;
+  justify-content: center;
 }
 .btn-edit {
     width: 54px;

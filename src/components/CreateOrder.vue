@@ -3,7 +3,6 @@
     <h1>Create New Order</h1>
 
     <form @submit.prevent="submitOrder">
-      <!-- <input v-model="newOrder.number" placeholder="Order Number" class="input-style"> -->
 
       <table class="product-selection-table">
         <thead>
@@ -44,15 +43,21 @@
       <h2>Selected Products</h2>
       <ul>
         <li v-for="(item, index) in newOrder.products" :key="index">
-          {{ item.name }} - Quantity: {{ item.quantity }} Total: ${{
-            item.total
-          }}
-          <button
-            @click="removeProductFromOrder(index)"
-            class="btn-small btn-delete"
-          >
-            Remove
-          </button>
+          <div class="order-item">
+            <div class="order-item-info">
+              {{ item.name }} x{{ item.quantity }} - Total: ${{ item.total }}
+            </div>
+            <div>
+              <button
+              type="button"
+              @click="removeProductFromOrder(index)"
+              class="btn-small btn-delete"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+          
         </li>
       </ul>
       <p>
@@ -76,6 +81,7 @@ import {
   deleteDoc,
   updateDoc,
 } from "firebase/firestore";
+import { fetchProducts } from "@/firebaseUtils";
 import { fetchOrders } from "@/firebaseUtils";
 
 export default {
@@ -94,31 +100,24 @@ export default {
   },
   methods: {
     async fetchProducts() {
-      const querySnapshot = await getDocs(collection(db, "products"));
-      this.availableProducts = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        quantity: '',
-      }));
+      const fetchedProducts = await fetchProducts();
+      this.availableProducts = fetchedProducts.sort((a, b) => {
+        return a.name.localeCompare(b.name);
+      });
     },
     async assignOrderNumber() {
       const orders = await fetchOrders();
-      console.log(`numero de ordenes: ${orders.length}`);
       if (orders.length > 0) {
-        console.log("mas de 0 ordenes");
         // Asigna el número de orden automáticamente como el número más alto + 1
         const maxOrderNumber = Math.max(
           ...orders.map((order) => order.orderNumber)
         );
         this.newOrder.orderNumber = maxOrderNumber + 1;
-        console.log(`orderNumber: ${this.newOrder.orderNumber}`);
       } else {
-        console.log("no hay ordenes");
         this.newOrder.orderNumber = 1; // Si no hay órdenes previas
       }
     },
     async addProductToOrder(selectedProduct) {
-      console.log(selectedProduct);
       if (selectedProduct.quantity == '') {
         alert("Please add a valid quantity");
         return;
@@ -147,7 +146,7 @@ export default {
     },
     async submitOrder() {
       if (this.newOrder.products.length === 0) {
-        alert("please add at least one product to the order.");
+        alert("Please add at least one product to the order.");
         return;
       }
       await this.assignOrderNumber();
@@ -249,11 +248,20 @@ button {
   border-radius: 4px;
   cursor: pointer;
 }
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px;
+  margin-bottom: 4px;
+}
+.order-item-info {
+  padding: 5px;
+}
 .btn-delete {
   background-color: #dc3545; /* Rojo */
+  height: 34px;
   border: none;
   color: white;
-  padding: 10px 20px;
   font-size: 16px;
   cursor: pointer;
   border-radius: 5px;

@@ -32,21 +32,24 @@
     </table>
     <div v-else class="no-products-message"><p>No products to show.</p></div>
     <div class="add-product-btn-container">
-      <button class="add-product-btn" @click="showAddProduct = true">
+      <button v-if="!showAddProduct" class="add-product-btn" @click="AddNewProduct()">
         Add New Product
       </button>
     </div>
 
     <div v-if="showAddProduct || selectedProduct" class="product-form">
-      <input v-model="productForm.name" placeholder="Name" />
-      <input v-model="productForm.price" placeholder="Price" />
+      <h5>{{ productForm.title }}</h5>
+      <input v-model="productForm.name" placeholder="Name" @input="handleProductInput()" id="product-name"/>
+      <input v-model="productForm.price" placeholder="Price" @input="handlePriceInput" id="product-price"/>
       <textarea
         v-model="productForm.description"
         placeholder="Description"
+        @input="handleProductInput()"
+        id="product-description"
       ></textarea>
       <div class="btn-container">
-        <button class="btn-cancel" @click="cancel">Cancel</button>
-        <button class="btn-submit" @click="submitProduct">Submit</button>
+        <button type="button" class="btn-cancel" @click="cancel">Cancel</button>
+        <button :disabled="!isSubmitEnabled" class="btn-submit" @click="submitProduct" id="btn-submit">Submit</button>
       </div>
     </div>
   </div>
@@ -69,15 +72,23 @@ export default {
       products: [],
       showAddProduct: false,
       selectedProduct: null,
+      isEditingProduct: false,
       productForm: {
+        title: "",
         name: "",
-        price: null,
+        price: "",
         description: "",
       },
     };
   },
   async created() {
     await this.fetchProducts();
+  },
+  computed: {
+    isSubmitEnabled() {
+      const { name, price, description } = this.productForm;
+      return name && price && description ? true : false;
+    }
   },
   methods: {
     async fetchProducts() {
@@ -86,11 +97,21 @@ export default {
         .map((doc) => ({ id: doc.id, ...doc.data() }))
         .sort((a, b) => a.name.localeCompare(b.name));
     },
+    AddNewProduct() {
+      this.showAddProduct = true;
+      this.productForm.title = "Add New Product";
+    },
     editProduct(id) {
+      this.productForm.title = "Edit Product";
+      this.isEditingProduct = true;
       const product = this.products.find((product) => product.id === id);
-      this.productForm = { ...product };
+      this.productForm = { title: this.productForm.title, ...product };
       this.selectedProduct = id;
       this.showAddProduct = true;
+      const sbmtBtn = document.getElementById("btn-submit");
+      if(sbmtBtn) {
+        sbmtBtn.disabled = false;
+      }
     },
     async deleteProduct(id) {
       await deleteDoc(doc(db, "products", id));
@@ -112,9 +133,33 @@ export default {
       this.showAddProduct = false;
       this.selectedProduct = null;
       this.productForm = { name: "", price: null, description: "" };
+      this.isEditingProduct = false;
     },
-  },
-};
+    handleProductInput() {
+      const productName = document.getElementById("product-name");
+      const productPrice = document.getElementById("product-price");
+      const productDesc = document.getElementById("product-description");
+      const sbmtBtn = document.getElementById("btn-submit");
+
+      if(productName.value != "" &&
+        productPrice.value != "" &&
+        productDesc.value != ""
+      ) {
+        sbmtBtn.disabled = false;
+      }else if(this.isEditingProduct == false) {
+        sbmtBtn.disabled = true;
+      }
+    },
+    handlePriceInput(e) {
+      this.handleProductInput();
+
+      if(e.target.value !== '') {
+        const sanitizedValue = parseInt(e.target.value.replace(/\D/g, '')) || '';
+        this.productForm.price = sanitizedValue;
+      }
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -207,6 +252,10 @@ td.actions {
 .btn-submit:hover {
   background-color: #218838; /* Verde más oscuro */
 }
+.btn-submit:disabled {
+  background-color: #92a095;
+  cursor: not-allowed;
+}
 .add-product-btn-container {
   display: flex;
   justify-content: center;
@@ -228,10 +277,14 @@ td.actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 4px;
+}
+.product-form h5{
+  margin-top: 8px;
 }
 .product-form input,
 .product-form textarea {
+  min-height: 32px;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
